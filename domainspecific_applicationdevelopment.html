@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vecna Grid Board Game</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .game-wrapper {
+            width: 900px;
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Header Health Tracker System */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 10px;
+        }
+
+        .stat-bubble {
+            font-size: 22px;
+            font-weight: bold;
+            color: #000000;
+        }
+
+        /* Two-Column Side by Side Layout */
+        .game-layout {
+            display: flex;
+            gap: 30px;
+        }
+
+        .left-panel {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .vecna-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .vecna-avatar {
+            width: 160px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #000000;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+        }
+
+        /* History System Button Component Styles */
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .history-controls button {
+            margin-bottom: 0;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        /* Dice Graphics Engine Styling */
+        .dice-container {
+            margin-bottom: 15px;
+        }
+
+        .dice {
+            width: 70px;
+            height: 70px;
+            background-color: #000000;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #3498db; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .dice.rolling {
+            animation: shake 0.1s infinite alternate;
+        }
+
+        @keyframes shake {
+            0% { transform: rotate(-8deg) scale(0.95); }
+            100% { transform: rotate(8deg) scale(1.05); }
+        }
+
+        #status-message {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333333;
+            min-height: 50px;
+        }
+
+        /* Board Game Grid Setup */
+        .right-panel {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .grid-board {
+            display: grid;
+            grid-template-columns: repeat(5, 90px);
+            grid-template-rows: repeat(5, 90px);
+            gap: 2px;
+            background-color: #7f8c8d; 
+            border: 3px solid #000000;
+        }
+
+        /* Individual Cell Configuration */
+        .cell {
+            background-color: #000000; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Player Avatar State */
+        .cell.player {
+            background-color: #90ee90 !important; 
+            color: #0000ff;
+        }
+
+        /* Green Highlight Route Paths */
+        .cell.valid-move {
+            background-color: #90ee90; 
+        }
+
+        /* Landed Toxic Acid Hazard State */
+        .cell.toxic-revealed {
+            background-color: #e74c3c !important;
+            color: #3498db;
+        }
+
+        /* Goal Finished Node Point reveal parameter */
+        .cell.end-revealed {
+            background-color: #ffc0cb !important; 
+            color: #000000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <div class="top-bar">
+            <div class="stat-bubble">Vecna Health: <span id="vecna-value">5</span></div>
+            <div class="stat-bubble">Health: <span id="hp-value">150</span></div>
+        </div>
+
+        <div class="game-layout">
+            <div class="left-panel">
+                <div class="vecna-container">
+                    <img src="image.jpeg" alt="Vecna Monster" class="vecna-avatar">
+                </div>
+                
+                <button id="roll-btn">Roll Dice</button>
+
+                <!-- History Navigation Core Engine Nodes -->
+                <div class="history-controls">
+                    <button id="undo-btn" disabled>↩️ Undo</button>
+                    <button id="redo-btn" disabled>↪️ Redo</button>
+                </div>
+                
+                <div class="dice-container">
+                    <div id="digital-dice" class="dice">-</div>
+                </div>
+                
+                <div id="status-message">Roll the dice to prepare your first move!</div>
+            </div>
+
+            <div class="right-panel">
+                <div id="grid-board" class="grid-board"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+           const gridBoard = document.getElementById('grid-board');
+        const rollBtn = document.getElementById('roll-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+        const digitalDice = document.getElementById('digital-dice');
+        const statusMessage = document.getElementById('status-message');
+        const hpValueDisplay = document.getElementById('hp-value');
+        const vecnaValueDisplay = document.getElementById('vecna-value');
+
+        const GRID_SIZE = 5;
+        let playerPos = null; 
+        let endPos = null;    
+        let currentDiceValue = 0;
+        let playerHP = 150;
+
+        // Vecna Variables
+        let vecnaHP = 5;
+        let vecnaTimer = null;
+        let isTimerStarted = false;
+
+        let gameState = 'NEED_ROLL'; 
+
+        // Grid Memory Tracking Matrix
+        let gridData = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
+        let gridTypes = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('safe')); 
+        let cellElements = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+        // Track discovered cell types for permanent visual updates
+        let discoveredCells = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
+
+        // History Undo/Redo Engine Memory Stacks
+        let undoStack = [];
+        let redoStack = [];
+
+        // Web Audio API Synthesizer Context
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'vecna_grow') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(55, now); 
+                gainNode.gain.setValueAtTime(0.12, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } 
+            else if (type === 'dice_tumble') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                gainNode.gain.setValueAtTime(0.05, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                osc.start(now);
+                osc.stop(now + 0.04);
+            }
+            else if (type === 'move_success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now); 
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); 
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } 
+            else if (type === 'toxic_damage') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(900, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.25);
+                gainNode.gain.setValueAtTime(0.25, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+            else if (type === 'move_fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(90, now + 0.3);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } 
+            else if (type === 'victory') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); 
+                osc.frequency.setValueAtTime(659.25, now + 0.1); 
+                osc.frequency.setValueAtTime(783.99, now + 0.2); 
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); 
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            } 
+            else if (type === 'game_over') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(40, now + 0.8);
+                gainNode.gain.setValueAtTime(0.4, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+                osc.start(now);
+                osc.stop(now + 0.9);
+            }
+        }
+
+        function initGame() {
+            gridBoard.innerHTML = '';
+            playerHP = 150;
+            vecnaHP = 5;
+            isTimerStarted = false;
+            gameState = 'NEED_ROLL';
+            undoStack = [];
+            redoStack = [];
+            if (vecnaTimer) clearInterval(vecnaTimer);
+            
+            hpValueDisplay.textContent = playerHP;
+            vecnaValueDisplay.textContent = vecnaHP;
+            digitalDice.textContent = '-';
+            
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    gridData[r][c] = Math.floor(Math.random() * 10) + 1;
+                    gridTypes[r][c] = Math.random() < 0.25 ? 'toxic' : 'safe';
+                    discoveredCells[r][c] = false;
+                    
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.textContent = ''; 
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    
+                    gridBoard.appendChild(cell);
+                    cellElements[r][c] = cell;
+                }
+            }
+            setFixedPositions();
+        }
+
+        function setFixedPositions() {
+            playerPos = { r: 4, c: 0 };
+            gridTypes[4][0] = 'safe'; 
+            discoveredCells[4][0] = true;
+
+            do {
+                endPos = {
+                    r: Math.floor(Math.random() * GRID_SIZE),
+                    c: Math.floor(Math.random() * GRID_SIZE)
+                };
+            } while (endPos.r === playerPos.r && endPos.c === playerPos.c);
+
+            rollBtn.disabled = false;
+            updateHistoryButtons();
+            updateGridUI();
+        }
+
+        function saveStateToHistory() {
+            const stateSnapshot = {
+                playerPos: { ...playerPos },
+                playerHP: playerHP,
+                discoveredCells: discoveredCells.map(row => [...row])
+            };
+            undoStack.push(stateSnapshot);
+            redoStack = []; 
+            updateHistoryButtons();
+        }
+
+        function updateHistoryButtons() {
+            const historyAllowed = (gameState === 'NEED_ROLL');
+            undoBtn.disabled = !historyAllowed || undoStack.length === 0;
+            redoBtn.disabled = !historyAllowed || redoStack.length === 0;
+        }
+
+        undoBtn.addEventListener('click', () => {
+            if (gameState !== 'NEED_ROLL' || undoStack.length === 0) return;
+            
+            const currentSnapshot = {
+                playerPos: { ...playerPos },
+                playerHP: playerHP,
+                discoveredCells: discoveredCells.map(row => [...row])
+            };
+            redoStack.push(currentSnapshot);
+
+            const previousState = undoStack.pop();
+            playerPos = previousState.playerPos;
+            playerHP = previousState.playerHP;
+            discoveredCells = previousState.discoveredCells;
+
+            hpValueDisplay.textContent = playerHP;
+            statusMessage.textContent = "Time Rewound! Safe state tracking recovered.";
+            playSound('move_success');
+            
+            updateHistoryButtons();
+            updateGridUI();
+        });
+
+        redoBtn.addEventListener('click', () => {
+            if (gameState !== 'NEED_ROLL' || redoStack.length === 0) return;
+
+            const currentSnapshot = {
+                playerPos: { ...playerPos },
+                playerHP: playerHP,
+                discoveredCells: discoveredCells.map(row => [...row])
+            };
+            undoStack.push(currentSnapshot);
+
+            const nextState = redoStack.pop();
+            playerPos = nextState.playerPos;
+            playerHP = nextState.playerHP;
+            discoveredCells = nextState.discoveredCells;
+
+            hpValueDisplay.textContent = playerHP;
+            statusMessage.textContent = "Time Fast-Forwarded! Restored your chosen path.";
+            playSound('move_success');
+
+            updateHistoryButtons();
+            updateGridUI();
+        });
+        function handleCellClick(r, c) {
+            if (gameState === 'NEED_MOVE') {
+                attemptMove(r, c);
+            }
+        }
+
+        function checkPowerBalance() {
+            if (vecnaHP > playerHP || playerHP <= 0) {
+                gameState = 'GAME_OVER';
+                clearInterval(vecnaTimer);
+                rollBtn.disabled = true;
+                undoBtn.disabled = true;
+                redoBtn.disabled = true;
+                statusMessage.textContent = `💀 Game Over! Vecna has crushed your mind. Game Resetting...`;
+                playSound('game_over');
+                updateGridUI();
+                
+                setTimeout(() => {
+                    initGame();
+                }, 4000);
+                return true;
+            }
+            return false;
+        }
+
+        function startVecnaGrowth() {
+            isTimerStarted = true;
+            vecnaTimer = setInterval(() => {
+                if (gameState === 'WON' || gameState === 'GAME_OVER') {
+                    clearInterval(vecnaTimer);
+                    return;
+                }
+                vecnaHP += 1;
+                vecnaValueDisplay.textContent = vecnaHP;
+                
+                playSound('vecna_grow'); 
+                checkPowerBalance();
+            }, 1000);
+        }
+
+        rollBtn.addEventListener('click', () => {
+            if (gameState !== 'NEED_ROLL') return;
+
+            if (!isTimerStarted) {
+                startVecnaGrowth();
+            }
+
+            rollBtn.disabled = true;
+            undoBtn.disabled = true;
+            redoBtn.disabled = true;
+            digitalDice.classList.add('rolling');
+            statusMessage.textContent = "Rolling...";
+
+            let duration = 600; 
+            let intervalTime = 60; 
+            let elapsed = 0;
+
+            let animationInterval = setInterval(() => {
+                digitalDice.textContent = Math.floor(Math.random() * 10) + 1;
+                playSound('dice_tumble');
+                elapsed += intervalTime;
+
+                if (elapsed >= duration) {
+                    clearInterval(animationInterval);
+                    
+                    currentDiceValue = Math.floor(Math.random() * 10) + 1;
+                    digitalDice.textContent = currentDiceValue;
+                    digitalDice.classList.remove('rolling');
+                    
+                    gameState = 'NEED_MOVE';
+                    statusMessage.textContent = `You rolled a ${currentDiceValue}. Move to an available green cell!`;
+                    updateGridUI();
+                }
+            }, intervalTime);
+        });
+
+        function attemptMove(targetR, targetC) {
+            if (gameState === 'GAME_OVER' || gameState === 'WON') return;
+
+            const isAdjacent = Math.abs(targetR - playerPos.r) + Math.abs(targetC - playerPos.c) === 1;
+            
+            if (!isAdjacent) {
+                statusMessage.textContent = `Invalid move! Move left, right, up, or down. Dice value is still ${currentDiceValue}.`;
+                return;
+            }
+
+            const targetRequiredValue = gridData[targetR][targetC];
+
+            // SUCCESS CONDITION (Only lets you pass if dice beats or matches the cell barrier)
+            if (currentDiceValue >= targetRequiredValue) {
+                saveStateToHistory();
+
+                playerPos = { r: targetR, c: targetC };
+                discoveredCells[targetR][targetC] = true;
+                
+                if (playerPos.r === endPos.r && playerPos.c === endPos.c) {
+                    gameState = 'WON';
+                    clearInterval(vecnaTimer);
+                    rollBtn.disabled = true;
+                    undoBtn.disabled = true;
+                    redoBtn.disabled = true;
+                    statusMessage.textContent = `🎉 Victory! You found the hidden destination cell and escaped Vecna!`;
+                    playSound('victory');
+                    updateGridUI();
+                    return;
+                }
+
+                if (gridTypes[targetR][targetC] === 'toxic') {
+                    playerHP -= targetRequiredValue;
+                    if (playerHP < 0) playerHP = 0;
+                    hpValueDisplay.textContent = playerHP;
+                    statusMessage.textContent = `💥 Toxic Spores! Lost ${targetRequiredValue} HP. Roll again!`;
+                    playSound('toxic_damage');
+                } else {
+                    statusMessage.textContent = `Safe Step! Roll again to continue your escape.`;
+                    playSound('move_success');
+                }
+
+                if (checkPowerBalance()) return;
+
+                gameState = 'NEED_ROLL';
+                rollBtn.disabled = false;
+                updateHistoryButtons();
+                updateGridUI();
+            } 
+            // FAILURE CONDITION (Fallback protection safety)
+            else {
+                statusMessage.textContent = `Blocked! You cannot access this space. Roll again!`;
+                playSound('move_fail');
+                gameState = 'NEED_ROLL';
+                rollBtn.disabled = false;
+                updateHistoryButtons();
+                updateGridUI();
+            }
+        }
+
+        function updateGridUI() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = cellElements[r][c];
+                    cell.className = 'cell'; 
+                    cell.textContent = '';
+
+                    const isAdjacent = Math.abs(r - playerPos.r) + Math.abs(c - playerPos.c) === 1;
+                    const cellBarrierValue = gridData[r][c];
+
+                    // 1. Path Calculation: Only highlight adjacent cells if the dice value matches or beats it
+                    if (gameState === 'NEED_MOVE' && isAdjacent) {
+                        if (currentDiceValue >= cellBarrierValue) {
+                            cell.classList.add('valid-move');
+                            // Text remains hidden to keep the structural barrier values anonymous!
+                        }
+                    }
+
+                    // 2. Persistent Discovery Rendering (Reveals footprint history)
+                    if (discoveredCells[r][c]) {
+                        if (gridTypes[r][c] === 'toxic') {
+                            cell.classList.add('toxic-revealed');
+                            cell.textContent = '🕷️';
+                        } else {
+                            // Revealed footprints display their true underlying value
+                            cell.textContent = cellBarrierValue;
+                            cell.style.color = '#7f8c8d'; // Muted text styling for past steps
+                        }
+                    }
+
+                    // 3. Victory/Loss Overlays
+                    if (r === endPos.r && c === endPos.c && (gameState === 'WON' || gameState === 'GAME_OVER')) {
+                        cell.className = 'cell end-revealed';
+                        cell.textContent = '🎯';
+                    }
+
+                    // 4. Primary Player Position (Top Rendering Layer)
+                    if (r === playerPos.r && c === playerPos.c) {
+                        cell.className = 'cell player';
+                        cell.textContent = '🧙';
+                    }
+                }
+            }
+        }
+
+        // Fire up deployment engine
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
+     

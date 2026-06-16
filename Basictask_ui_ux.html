@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe - Stream Your Sound</title>
+    <!-- Font Awesome for Representative Icons -->
+    <link rel="stylesheet">
+    <style>
+        /* --- Color Palette & Variables --- */
+        :root {
+            --bg-dark: #0a0a0c;
+            --bg-surface: #16161a;
+            --accent-primary: #00e5ff;
+            --accent-hover: #00b3cc;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* --- Global Reset & Typography Scale --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h1 { font-size: 3rem; }
+        h2 { font-size: 2.25rem; text-align: center; margin-bottom: 3rem; }
+        h3 { font-size: 1.5rem; margin-bottom: 1rem; }
+        p { color: var(--text-muted); font-size: 1rem; }
+        /* --- Reusable Components (Button Variants) --- */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 2px solid var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Auto Layout Container --- */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 5rem 0;
+        }
+
+        /* --- Header / Navigation --- */
+        header {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-layout {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            color: var(--accent-primary);
+        }
+
+        /* --- 1. Hero Section Layout --- */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-content h1 {
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-content p {
+            font-size: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .hero-image img {
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- 2. Value Proposition Layout --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background-color: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- 3. Featured Content Layout --- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+        }
+
+        .media-card {
+            background-color: var(--bg-surface);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .media-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .media-cover {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(45deg, #1e1b4b, #311042);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .media-cover i {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        .media-info {
+            padding: 1.25rem;
+        }
+        /* --- 4. Subscription Tiers Layout --- */
+        .tiers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            align-items: stretch;
+        }
+
+        .tier-card {
+            background-color: var(--bg-surface);
+            padding: 3rem 2rem;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            position: relative;
+        }
+
+        .tier-card.highlighted {
+            border: 2px solid var(--accent-primary);
+            transform: scale(1.03);
+        }
+
+        .badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--accent-primary);
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 1.5rem 0;
+        }
+
+        .price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .tier-features {
+            list-style: none;
+            margin-bottom: 2.5rem;
+            flex-grow: 1;
+        }
+
+        .tier-features li {
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .tier-features li i {
+            color: var(--accent-primary);
+            margin-right: 0.5rem;
+        }
+
+        /* --- 5. Social Proof Layout --- */
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .review-card {
+            background-color: var(--bg-surface);
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        .stars {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        .reviewer {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #334155;
+        }
+
+        /* --- 6. Footer Layout --- */
+        footer {
+            background-color: #050507;
+            padding: 4rem 0 2rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-newsletter h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .newsletter-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            max-width: 400px;
+        }
+
+        .newsletter-form input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-surface);
+            color: var(--text-main);
+        }
+
+        .newsletter-form input:focus {
+            outline: 1px solid var(--accent-primary);
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-main);
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-icons a {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            transition: color 0.2s;
+        }
+
+        .social-icons a:hover {
+            color: var(--accent-primary);
+        }
+
+        .copyright {
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 2rem;
+            font-size: 0.875rem;
+        }
+
+        /* --- Responsive Design (Mobile Variation) --- */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.25rem; }
+            h2 { font-size: 1.75rem; margin-bottom: 2rem; }
+            
+            section { padding: 3.5rem 0; }
+            
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+                text-align: center;
+            }
+
+            .hero-actions {
+                justify-content: center;
+            }
+
+            .tier-card.highlighted {
+                transform: none;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header>
+        <div class="container nav-layout">
+            <div class="logo">VIBE<span>.</span></div>
+            <a href="#pricing" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.9rem;">Get App</a>
+        </div>
+    </header>
+
+    <!-- 1. Hero Section -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <h1>Sound That Moves Your Soul</h1>
+                <p>Experience ultra-high-fidelity music streaming tailored to your unique rhythm. No ads. Just pure, uncompressed audio.</p>
+                <div class="hero-actions">
+                    <a href="#pricing" class="btn btn-primary">Start Free Trial</a>
+                    <a href="#featured" class="btn btn-secondary">Explore Tracks</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div style="width: 100%; aspect-ratio: 1.5; background: linear-gradient(135deg, #22d3ee, #047857); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000;">
+                    [ Immersive App Dashboard Preview ]
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Value Proposition Section -->
+    <section id="features" style="background-color: #08080a;">
+        <div class="container">
+            <h2>Why Choose Vibe?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fa-solid fa-bolt feature-icon"></i>
+                    <h3>Lossless Quality</h3>
+                    <p>Stream 24-bit crystal clear audio directly into your headphones.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-wand-magic-sparkles feature-icon"></i>
+                    <h3>Smart Playlists</h3>
+                    <p>AI algorithms built from your history map custom sounds every day.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-cloud-arrow-down feature-icon"></i>
+                    <h3>Offline Listening</h3>
+                    <p>Save unlimited tracks natively to your device for smooth playback.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 3. Featured Content Section -->
+    <section id="featured">
+        <div class="container">
+            <h2>Trending Right Now</h2>
+            <div class="content-grid">
+                <div class="media-card">
+                    <div class="media-cover"><i class="fa-solid fa-music"></i></div>
+                    <div class="media-info">
+                        <h3>Midnight Neon</h3>
+                        <p>Playlist • Synthwave</p>
+                    </div>
+                </div>
+                <div class="media-card">
+                    <div class="media-cover" style="background: linear-gradient(45deg, #7c2d12, #9a3412);"><i class="fa-solid fa-compact-disc"></i></div>
+                    <div class="media-info">
+                        <h3>Velvet Horizon</h3>
+                        <p>Album • Smooth Jazz</p>
+                    </div>
+                </div>
+                <div class="media-card">
+                    <div class="media-cover" style="background: linear-gradient(45deg, #064e3b, #115e59);"><i class="fa-solid fa-radio"></i></div>
+                    <div class="media-info">
+                        <h3>Echospace Mix</h3>
+                        <p>Artist • Deep Techno</p>
+                    </div>
+                </div>
+                <div class="media-card">
+                    <div class="media-cover" style="background: linear-gradient(45deg, #581c87, #701a75);"><i class="fa-solid fa-guitar"></i></div>
+                    <div class="media-info">
+                        <h3>Acoustic Waves</h3>
+                        <p>Playlist • Indie Chill</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Subscription Tiers Section -->
+    <section id="pricing" style="background-color: #08080a;">
+        <div class="container">
+            <h2>Choose Your Rhythm</h2>
+            <div class="tiers-grid">
+                <!-- Free Plan -->
+                <div class="tier-card">
+                    <h3>Free</h3>
+                    <p>Essential soundscapes</p>
+                    <div class="price">$0<span>/mo</span></div>
+                    <ul class="tier-features">
+                        <li><i class="fa-solid fa-check"></i> Standard audio streams</li>
+                        <li><i class="fa-solid fa-check"></i> Personalized discovery mix</li>
+                        <li><i class="fa-solid fa-check"></i> Access to global radio</li>
+                    </ul>
+                    <button class="btn btn-secondary">Get Started</button>
+                </div>
+                <!-- Premium Plan -->
+                <div class="tier-card highlighted">
+                    <div class="badge">POPULAR</div>
+                    <h3>Premium</h3>
+                    <p>The ultimate audio studio</p>
+                    <div class="price">$9.99<span>/mo</span></div>
+                    <ul class="tier-features">
+                        <li><i class="fa-solid fa-check"></i> Master quality lossless audio</li>
+                        <li><i class="fa-solid fa-check"></i> Total ad-free experience</li>
+                        <li><i class="fa-solid fa-check"></i> Unlimited downloads</li>
+                        <li><i class="fa-solid fa-check"></i> Exclusive offline storage</li>
+                    </ul>
+                    <button class="btn btn-primary">Try 30 Days Free</button>
+                </div>
+                <!-- Family Plan -->
+                <div class="tier-card">
+                    <h3>Family</h3>
+                    <p>Shared audio experiences</p>
+                    <div class="price">$14.99<span>/mo</span></div>
+                    <ul class="tier-features">
+                        <li><i class="fa-solid fa-check"></i> Everything in Premium</li>
+                        <li><i class="fa-solid fa-check"></i> Up to 6 separate profiles</li>
+                        <li><i class="fa-solid fa-check"></i> Shared collaborative streams</li>
+                        <li><i class="fa-solid fa-check"></i> Kids curated companion app</li>
+                    </ul>
+                    <button class="btn btn-secondary">Get Family Pack</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 5. Social Proof Section -->
+    <section id="testimonials">
+        <div class="container">
+            <h2>Loved by Audiophiles</h2>
+            <div class="reviews-grid">
+                <div class="review-card">
+                    <div class="stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p>"The pure clarity of the premium tier completely changed how I listen to acoustics. Unbelievable crispness."</p>
+                    <div class="reviewer">
+                        <div class="avatar"></div>
+                        <div>
+                            <h4>Marcus Vance</h4>
+                            <p style="font-size: 0.85rem;">Sound Engineer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-card">
+                    <div class="stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p>"Clean, intuitive layout layouts. The smart recommendation system perfectly captures exactly what mood I am in every morning."</p>
+                    <div class="reviewer">
+                        <div class="avatar"></div>
+                        <div>
+                            <h4>Elena Rostova</h4>
+                            <p style="font-size: 0.85rem;">Daily Listener</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-card">
+                    <div class="stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p>"Offline mode works smoothly during long underground train commutes. No buffering, no dropouts, just pure music tracks."</p>
+                    <div class="reviewer">
+                        <div class="avatar"></div>
+                        <div>
+                            <h4>David K.</h4>
+                            <p style="font-size: 0.85rem;">Casual Streamer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Footer Section -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-newsletter">
+                    <h3>Stay Tuned</h3>
+                    <p>Get bi-weekly updates on new track drops, artist exclusives, and product upgrades.</p>
+                    <form class="newsletter-form" onsubmit="event.preventDefault();">
+                        <input type="email" placeholder="Enter your email" required>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem;">Join</button>
+                    </form>
+                </div>
+                <div class="footer-links">
+                    <h4 style="margin-bottom: 1rem;">Platform</h4>
+                    <ul>
+                        <li><a href="#">Web Player</a></li>
+                        <li><a href="#">Mobile Apps</a></li>
+                        <li><a href="#">Features</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4 style="margin-bottom: 1rem;">Connect</h4>
+                    <p>Support & Press inquiries</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#"><i class="fa-brands fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2026 Vibe Music Inc. Built completely manually using native web components.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

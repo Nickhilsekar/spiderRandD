@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Number Survival Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f4f4f9;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .setup-box {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        select, input[type="number"] {
+            padding: 10px;
+            font-size: 1rem;
+            text-align: center;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        select {
+            width: 120px;
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            width: 80px;
+            margin-right: 10px;
+        }
+        .scoreboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            background: #f8f9fa;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+        }
+        .score-card {
+            padding: 5px 10px;
+            border-radius: 4px;
+            background: #fff;
+            border: 1px solid #e3e3e3;
+            min-width: 110px;
+        }
+        .score-card div {
+            margin: 3px 0;
+        }
+        .dead {
+            text-decoration: line-through;
+            opacity: 0.4;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        button:hover:enabled {
+            background-color: #0056b3;
+        }
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            min-height: 150px;
+            text-align: left;
+        }
+        .winner {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .game-over-banner {
+            color: #dc3545;
+            font-size: 1.6rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .reveal-text {
+            font-weight: bold;
+            color: #17a2b8;
+            text-align: center;
+        }
+        .choice-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            font-size: 1.05rem;
+        }
+        .choice-list li {
+            padding: 6px 0;
+            border-bottom: 1px dashed #e3e3e3;
+        }
+        .spider-highlight {
+            color: #e63946;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .history-log-container {
+            margin-top: 30px;
+            text-align: left;
+            border-top: 2px solid #dee2e6;
+            padding-top: 20px;
+        }
+        .history-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        .history-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 0.9rem;
+            list-style: none;
+        }
+        .history-log li {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            background-color: #f1f3f5;
+            border-left: 4px solid #6c757d;
+        }
+        .history-log li.human-win { border-left-color: #28a745; background-color: #e8f5e9; }
+        .history-log li.ai-win { border-left-color: #dc3545; background-color: #ffebee; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Spider Number Survival</h1>
+    <p>Everyone starts with <strong>10 lives</strong>. Guess closest to the Spider Number (Average × 0.8) to protect your life and earn score points!</p>
+
+    <div class="setup-box" id="setup-area">
+        <label for="player-count"><strong>Select Total Players: </strong></label>
+        <select id="player-count">
+            <option value="2">2 Players (1 AI)</option>
+            <option value="3">3 Players (2 AIs)</option>
+            <option value="4" selected>4 Players (3 AIs)</option>
+            <option value="5">5 Players (4 AIs)</option>
+            <option value="6">6 Players (5 AIs)</option>
+        </select>
+        <button onclick="initializeGame()">Start Game</button>
+    </div>
+
+    <div id="game-area" style="display: none;">
+        <div class="scoreboard" id="dynamic-scoreboard"></div>
+
+        <div id="game-controls">
+            <!-- Adjusted min to 0 -->
+            <input type="number" id="human-input" min="0" max="100" placeholder="0-100">
+            <button id="submit-btn" onclick="playRound()">Submit Choice</button>
+            <button id="reset-btn" onclick="resetToSetup()" style="background-color: #6c757d; margin-left: 10px;">New Game</button>
+        </div>
+
+        <div class="result-box" id="result-display">
+            <p class="reveal-text" style="color: #6c757d;">Enter a number to lock your choice.</p>
+        </div>
+
+        <div class="history-log-container">
+            <div class="history-title">📜 Match History Log</div>
+            <ul class="history-log" id="history-log-list">
+                <li style="color: #868e96; text-align: center; border-left: none; background: transparent;">No rounds played yet.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<script>
+    let totalPlayers = 4;
+    let lives = {};
+    let scores = {}; 
+    let roundCount = 0;
+    const colors = ["#007bff", "#dc3545", "#fd7e14", "#6f42c1", "#e83e8c", "#20c997"];
+
+    function initializeGame() {
+        totalPlayers = parseInt(document.getElementById('player-count').value);
+        lives = { human: 10 };
+        scores = { human: 0 }; 
+        roundCount = 0;
+        
+        for (let i = 1; i < totalPlayers; i++) {
+            lives[`ai${i}`] = 10;
+            scores[`ai${i}`] = 0; 
+        }
+
+        renderScoreboard();
+        
+        document.getElementById('history-log-list').innerHTML = '<li style="color: #868e96; text-align: center; border-left: none; background: transparent;">No rounds played yet.</li>';
+        
+        document.getElementById('setup-area').style.display = 'none';
+        document.getElementById('game-area').style.display = 'block';
+        document.getElementById('human-input').disabled = false;
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('result-display').innerHTML = '<p class="reveal-text" style="color: #6c757d;">Enter a number to lock your choice.</p>';
+    }
+
+    function renderScoreboard() {
+        let scoreboardHTML = `
+            <div class="score-card ${lives.human <= 0 ? 'dead' : ''}" style="border-top: 4px solid ${colors};">
+                <div style="color: ${colors}; font-weight: bold;">You</div>
+                <div>HP: ${lives.human}❤️</div>
+                <div style="font-size: 0.9rem; color: #555;">Score: <strong>${scores.human}</strong></div>
+            </div>`;
+        
+        for (let i = 1; i < totalPlayers; i++) {
+            const aiId = `ai${i}`;
+            scoreboardHTML += `
+                <div class="score-card ${lives[aiId] <= 0 ? 'dead' : ''}" style="border-top: 4px solid ${colors[i]};">
+                    <div style="color: ${colors[i]}; font-weight: bold;">AI ${i}</div>
+                    <div>HP: ${lives[aiId]}❤️</div>
+                    <div style="font-size: 0.9rem; color: #555;">Score: <strong>${scores[aiId]}</strong></div>
+                </div>`;
+        }
+
+        document.getElementById('dynamic-scoreboard').innerHTML = scoreboardHTML;
+    }
+
+    function resetToSetup() {
+        document.getElementById('setup-area').style.display = 'block';
+        document.getElementById('game-area').style.display = 'none';
+    }
+    function playRound() {
+        const inputField = document.getElementById('human-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const resultDisplay = document.getElementById('result-display');
+        const logList = document.getElementById('history-log-list');
+        
+        const humanChoice = parseInt(inputField.value);
+
+        // Updated validation rule to allow 0
+        if (isNaN(humanChoice) || humanChoice < 0 || humanChoice > 100) {
+            alert("Please enter a valid number between 0 and 100.");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        inputField.disabled = true;
+        roundCount++;
+
+        let dataset = [];
+        if (lives.human > 0) {
+            dataset.push({ name: 'You', id: 'human', choice: humanChoice, color: colors });
+        }
+
+        for (let i = 1; i < totalPlayers; i++) {
+            const aiId = `ai${i}`;
+            if (lives[aiId] > 0) {
+                dataset.push({
+                    name: `AI ${i}`,
+                    id: aiId,
+                    // Updated to pick a random integer between 0 and 100 inclusive
+                    choice: Math.floor(Math.random() * 101),
+                    color: colors[i]
+                });
+            }
+        }
+
+        resultDisplay.innerHTML = `
+            <ul class="choice-list">
+                <li><span style="color: ${colors};">●</span> <strong>Your Choice:</strong> ${humanChoice}</li>
+            </ul>
+            <p class="reveal-text">AI Opponents are calculating choices...</p>
+        `;
+
+        setTimeout(() => {
+            let listHTML = dataset.map(p => 
+                `<li><span style="color: ${p.color};">●</span> <strong>${p.name} Choice:</strong> ${p.choice}</li>`
+            ).join('');
+
+            resultDisplay.innerHTML = `
+                <ul class="choice-list">${listHTML}</ul>
+                <p class="reveal-text">Calculating Spider Number...</p>
+            `;
+
+            setTimeout(() => {
+                const totalSum = dataset.reduce((sum, p) => sum + p.choice, 0);
+                const activePlayersCount = dataset.length;
+                const average = totalSum / activePlayersCount;
+                const spiderNumber = average * 0.8;
+
+                dataset.forEach(p => {
+                    p.diff = Math.abs(p.choice - spiderNumber);
+                });
+
+                let minDiff = Math.min(...dataset.map(p => p.diff));
+                let roundWinners = dataset.filter(p => p.diff === minDiff);
+                let winnerIds = roundWinners.map(w => w.id);
+
+                roundWinners.forEach(w => {
+                    scores[w.id] += 1;
+                });
+
+                let healthLossSummary = "";
+                let logEliminations = [];
+
+                dataset.forEach(p => {
+                    if (!winnerIds.includes(p.id)) {
+                        lives[p.id]--;
+                        if (lives[p.id] <= 0) {
+                            healthLossSummary += `<br>💥 <strong>${p.name} HAS BEEN ELIMINATED!</strong>`;
+                            logEliminations.push(p.name);
+                        } else {
+                            healthLossSummary += `<br>❌ ${p.name} loses 1 life point.`;
+                        }
+                    } else {
+                        healthLossSummary += `<br>🛡️ ${p.name} defended safely and gained +1 Score Point!`;
+                    }
+                });
+
+                renderScoreboard();
+
+                let isHumanWin = winnerIds.includes('human');
+                let logClass = isHumanWin ? 'human-win' : 'ai-win';
+                let winnerNamesText = roundWinners.map(w => w.name).join(', ');
+
+                let winnerText = (roundWinners.length === 1) 
+                    ? `${winnerNamesText} wins this round!` 
+                    : `Tie round! Winners: ${winnerNamesText}`;
+
+                let finalSummaryHTML = dataset.map(p => 
+                    `<li><span style="color: ${p.color};">●</span> <strong>${p.name}:</strong> ${p.choice} <span style="color:#777; font-size:0.9rem;">(Distance: ${p.diff.toFixed(1)})</span></li>`
+                ).join('');
+
+                resultDisplay.innerHTML = `
+                    <ul class="choice-list">${finalSummaryHTML}</ul>
+                    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+                    <p style="font-size: 1.05rem; text-align: center; margin-bottom: 5px;"><strong>Active Players Average:</strong> ${average.toFixed(2)}</p>
+                    <p style="font-size: 1.1rem; text-align: center; margin-bottom: 5px;">🕷️ <span class="spider-highlight">Spider Number: ${spiderNumber.toFixed(2)}</span></p>
+                    <div class="winner">${winnerText}</div>
+                    <p style="text-align: center; font-size: 0.95rem; color: #555;">${healthLossSummary}</p>
+                `;
+
+                if (roundCount === 1) logList.innerHTML = ''; 
+                
+                let logChoicesString = dataset.map(p => `${p.name}:${p.choice}`).join(', ');
+                let eliminationLogString = logEliminations.length > 0 ? ` [Eliminated: ${logEliminations.join(', ')}]` : '';
+                
+                let logItemHTML = `<li class="${logClass}">
+                    <strong>Round ${roundCount}:</strong> Target was <strong>${spiderNumber.toFixed(1)}</strong>. 
+                    Winner: <em>${winnerNamesText} (+1 Pt)</em>. <br>
+                    <small style="color: #555;">Guesses: (${logChoicesString})${eliminationLogString}</small>
+                </li>`;
+                
+                logList.innerHTML = logItemHTML + logList.innerHTML;
+
+                let aliveAIs = 0;
+                for (let i = 1; i < totalPlayers; i++) {
+                    if (lives[`ai${i}`] > 0) aliveAIs++;
+                }
+
+                if (lives.human <= 0) {
+                    resultDisplay.innerHTML += `<div class="game-over-banner">💀 GAME OVER! You ran out of lives. Total Score: ${scores.human}</div>`;
+                } else if (aliveAIs === 0) {
+                    resultDisplay.innerHTML += `<div class="winner" style="font-size: 1.6rem; color: #28a745;">🏆 VICTORY! Last player standing! Total Score: ${scores.human}</div>`;
+                } else {
+                    inputField.value = "";
+                    inputField.disabled = false;
+                    submitBtn.disabled = false;
+                }
+
+            }, 1500);
+        }, 1000);
+    }
+</script>
+</body>
+</html>
